@@ -1,6 +1,6 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import RectifierScreen from '../components/RectifierScreen';
 
 const Stack = createStackNavigator();
@@ -17,12 +17,19 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {renderButton('Rectificador 1', 1)}
-      {renderButton('Rectificador 2', 2)}
-      {renderButton('Rectificador 3', 3)}
-      {renderButton('Rectificador 4', 4)}
-      {renderButton('Rectificador 5', 5)}
-      {renderButton('Rectificador 6', 6)}
+      <Image source={require('../assets/indugalLogo.png')} style={styles.logo} />
+      <View style={styles.buttonContainer}>
+        <ScrollView contentContainerStyle={styles.buttonColumn}>
+          {renderButton('BAÑO 1', 1)}
+          {renderButton('BAÑO 2', 2)}
+          {renderButton('BAÑO 3', 3)}
+        </ScrollView>
+        <ScrollView contentContainerStyle={styles.buttonColumn}>
+          {renderButton('BAÑO 4', 4)}
+          {renderButton('BAÑO 5', 5)}
+          {renderButton('BAÑO 6', 6)}
+        </ScrollView>
+      </View>
     </View>
   );
 };
@@ -34,18 +41,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
   },
+  logo: {
+    width: '80%',
+    height: 100,
+    resizeMode: 'contain',
+    marginBottom: 20,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
+    marginTop: 20,
+  },
+  buttonColumn: {
+    alignItems: 'center',
+  },
   button: {
-    backgroundColor: '#4CAF50', // Fondo del botón
-    paddingVertical: 10, // Espaciado vertical
-    paddingHorizontal: 20, // Espaciado horizontal
-    borderRadius: 5, // Bordes redondeados
-    marginVertical: 5, // Espaciado entre botones
-    alignItems: 'center', // Centrar el texto horizontalmente
+    backgroundColor: '#3949ab',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginVertical: 20,
+    alignItems: 'center',
+    width: 120,
   },
   buttonText: {
-    color: '#fff', // Color del texto
-    fontSize: 16, // Tamaño del texto
-    fontWeight: 'bold', // Grosor del texto
+    textAlign: 'center',
+    color: '#fff',
+    fontSize: 25,
+    fontWeight: 'bold',
   },
 });
 
