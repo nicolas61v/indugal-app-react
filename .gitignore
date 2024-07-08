@@ -1,0 +1,28 @@
+# React Native
+node_modules/
+*.log
+*.swp
+*.swo
+.expo/
+.expo-shared/
+
+# macOS
+.DS_Store
+
+# Android
+android/.gradle/
+android/app/build/
+android/app/.cxx/
+android/local.properties
+android/.idea/
+android/.settings/
+android/build/
+
+# iOS
+ios/Pods/
+ios/build/
+ios/DerivedData/
+
+# Expo
+.expo/*
+.expo-shared/*

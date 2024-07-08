@@ -1,19 +1,33 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
-import ServoButton from './ServoButton'; 
-import RelayButton from './RelayButton';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 const RectifierScreen = ({ route }) => {
   const { rectifierId } = route.params;
+
+  const handleCommand = (command) => {
+    fetch(`http://192.168.1.65/${command}`)
+      .then(response => response.text())
+      .then(data => console.log(data))
+      .catch(error => console.error(error));
+  };
+
+  const renderButton = (title, command) => (
+    <TouchableOpacity
+      style={styles.button}
+      onPress={() => handleCommand(command)}
+    >
+      <Text style={styles.buttonText}>{title}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Control de Rectificador {rectifierId}</Text>
       <View style={styles.buttonContainer}>
-        <ServoButton title={`${rectifierId} Subir`} command={`R${rectifierId}UP`} />
-        <ServoButton title={`${rectifierId} bajar`} command={`R${rectifierId}DOWN`} />
-        <RelayButton title="MANUAL" command={`relay${rectifierId}on`} />
-        <RelayButton title="CONTROLADO" command={`relay${rectifierId}off`} />
+        {renderButton('Subir', `R${rectifierId}UP`)}
+        {renderButton('Bajar', `R${rectifierId}DOWN`)}
+        {renderButton('MANUAL', `relay${rectifierId}on`)}
+        {renderButton('CONTROLADO', `relay${rectifierId}off`)}
       </View>
     </View>
   );
@@ -34,6 +48,19 @@ const styles = StyleSheet.create({
     width: '80%',
     justifyContent: 'space-between',
     height: 200,
+  },
+  button: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginVertical: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
