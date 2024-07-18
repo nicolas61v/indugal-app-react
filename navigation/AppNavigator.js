@@ -1,6 +1,6 @@
 import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
+import { createStackNavigator } from '@react-navigation/stack';
 import RectifierScreen from '../components/RectifierScreen';
 
 const Stack = createStackNavigator();
@@ -10,6 +10,7 @@ const HomeScreen = ({ navigation }) => {
     <TouchableOpacity
       style={styles.button}
       onPress={() => navigation.navigate('Rectifier', { rectifierId })}
+      key={rectifierId}
     >
       <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
@@ -31,6 +32,23 @@ const HomeScreen = ({ navigation }) => {
         </ScrollView>
       </View>
     </View>
+  );
+};
+
+const AppNavigator = () => {
+  return (
+    <Stack.Navigator initialRouteName="Home">
+      <Stack.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ title: 'Home' }}
+      />
+      <Stack.Screen 
+        name="Rectifier" 
+        component={RectifierScreen} 
+        options={{ title: 'Rectifier' }}
+      />
+    </Stack.Navigator>
   );
 };
 
@@ -72,14 +90,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-const AppNavigator = () => {
-  return (
-    <Stack.Navigator initialRouteName="Home">
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="Rectifier" component={RectifierScreen} />
-    </Stack.Navigator>
-  );
-};
 
 export default AppNavigator;
