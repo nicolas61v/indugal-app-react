@@ -45,7 +45,7 @@ const RectifierScreen = ({ route, navigation }) => {
         style={styles.backButton}
         onPress={() => navigation.goBack()} // Asume que `navigation` está disponible como prop
       >
-        <Text style={styles.backButtonText}>REGRESAR</Text>
+        <Text style={styles.backButtonText}>MENU</Text>
       </TouchableOpacity>
     </View>
   );
