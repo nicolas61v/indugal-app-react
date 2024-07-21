@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TimerContext } from './TimerContext';
 
 const RectifierScreen = ({ route, navigation }) => {
   const { rectifierId } = route.params;
+  const { timers, startTimer, stopTimer, setTimerDuration } = useContext(TimerContext);
+  const timer = timers[rectifierId] || 0;
   const [activeButton, setActiveButton] = useState(null);
-  const [timer, setTimer] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   useEffect(() => {
-    // Load initial state from AsyncStorage
     const loadState = async () => {
       try {
-        const storedTime = await AsyncStorage.getItem(`rectifier${rectifierId}_time`);
         const storedButton = await AsyncStorage.getItem(`rectifier${rectifierId}_button`);
-        if (storedTime !== null) setTimer(parseInt(storedTime, 10));
         if (storedButton !== null) setActiveButton(storedButton);
       } catch (e) {
         console.error('Error loading state:', e);
@@ -24,29 +22,12 @@ const RectifierScreen = ({ route, navigation }) => {
   }, [rectifierId]);
 
   useEffect(() => {
-    // Timer management effect
-    let timerInterval;
-    if (isTimerRunning && timer > 0) {
-      timerInterval = setInterval(() => {
-        setTimer(prevTimer => {
-          const newTime = prevTimer - 1;
-          if (newTime <= 0) {
-            clearInterval(timerInterval);
-            handleCommand(`relay${rectifierId}off`);
-            setActiveButton(`relay${rectifierId}off`);
-            setIsTimerRunning(false);
-            Alert.alert(`Baño ${rectifierId}`, 'El tiempo ha terminado');
-            return 0;
-          }
-          saveState(newTime, activeButton);
-          return newTime;
-        });
-      }, 1000);
-    } else {
-      clearInterval(timerInterval);
+    if (timer === 0 && activeButton === `relay${rectifierId}on`) {
+      handleCommand(`relay${rectifierId}off`);
+      setActiveButton(`relay${rectifierId}off`);
+      Alert.alert(`Baño ${rectifierId}`, 'El tiempo ha terminado');
     }
-    return () => clearInterval(timerInterval);
-  }, [isTimerRunning, timer, rectifierId, activeButton]);
+  }, [timer, activeButton, rectifierId]);
 
   const handleCommand = (command) => {
     fetch(`http://10.10.0.68/${command}`)
@@ -68,8 +49,11 @@ const RectifierScreen = ({ route, navigation }) => {
         handleCommand(command);
         if (isControlButton) {
           setActiveButton(command);
-          setIsTimerRunning(command === `relay${rectifierId}on`);
-          saveState(timer, command);
+          if (command === `relay${rectifierId}on`) {
+            startTimer(rectifierId);
+          } else {
+            stopTimer(rectifierId);
+          }
         }
       }}
     >
@@ -79,21 +63,7 @@ const RectifierScreen = ({ route, navigation }) => {
 
   const adjustTimer = (adjustment) => {
     const newTime = Math.max(timer + adjustment * 60, 0);
-    setTimer(newTime);
-    saveState(newTime, activeButton);
-  };
-
-  const saveState = async (time, button) => {
-    try {
-      await AsyncStorage.setItem(`rectifier${rectifierId}_time`, time.toString());
-      if (button !== null && button !== undefined) {
-        await AsyncStorage.setItem(`rectifier${rectifierId}_button`, button);
-      } else {
-        await AsyncStorage.removeItem(`rectifier${rectifierId}_button`);
-      }
-    } catch (e) {
-      console.error('Error saving state:', e);
-    }
+    setTimerDuration(rectifierId, newTime);
   };
 
   const formatTime = (seconds) => {
