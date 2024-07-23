@@ -22,12 +22,12 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.buttonContainer}>
         <ScrollView contentContainerStyle={styles.buttonColumn}>
           {renderButton('BAÑO 1', 1)}
+          {renderButton('BAÑO 2', 2)}
           {renderButton('BAÑO 3', 3)}
-          {renderButton('BAÑO 5', 5)}
         </ScrollView>
         <ScrollView contentContainerStyle={styles.buttonColumn}>
-          {renderButton('BAÑO 2', 2)}
           {renderButton('BAÑO 4', 4)}
+          {renderButton('BAÑO 5', 5)}
           {renderButton('BAÑO 6', 6)}
         </ScrollView>
       </View>

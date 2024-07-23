@@ -31,11 +31,16 @@ const RectifierScreen = ({ route, navigation }) => {
 
   const handleCommand = (command) => {
     fetch(`http://10.10.0.68/${command}`)
-      .then(response => response.text())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
       .then(data => console.log(data))
       .catch(error => {
         console.error('Error en el comando:', error);
-        Alert.alert('Error', 'No se pudo enviar el comando.');
+        Alert.alert('Error', 'Asegúrate de estar conectado a la red del dispositivo.');
       });
   };
 
@@ -49,6 +54,7 @@ const RectifierScreen = ({ route, navigation }) => {
         handleCommand(command);
         if (isControlButton) {
           setActiveButton(command);
+          AsyncStorage.setItem(`rectifier${rectifierId}_button`, command); // Guardar estado en AsyncStorage
           if (command === `relay${rectifierId}on`) {
             startTimer(rectifierId);
           } else {
