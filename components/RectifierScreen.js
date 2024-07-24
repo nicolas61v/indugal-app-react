@@ -1,48 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TimerContext } from './TimerContext';
+import React, { useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { TimerContext } from '../components/TimerContext';  // Ajusta la ruta si es necesario
 
 const RectifierScreen = ({ route, navigation }) => {
   const { rectifierId } = route.params;
-  const { timers, startTimer, stopTimer, setTimerDuration } = useContext(TimerContext);
+  const { timers, startTimer, stopTimer, setTimerDuration, activeStates, setActiveButton, handleCommand } = useContext(TimerContext);
   const timer = timers[rectifierId] || 0;
-  const [activeButton, setActiveButton] = useState(null);
-
-  useEffect(() => {
-    const loadState = async () => {
-      try {
-        const storedButton = await AsyncStorage.getItem(`rectifier${rectifierId}_button`);
-        if (storedButton !== null) setActiveButton(storedButton);
-      } catch (e) {
-        console.error('Error loading state:', e);
-      }
-    };
-    loadState();
-  }, [rectifierId]);
-
-  useEffect(() => {
-    if (timer === 0 && activeButton === `relay${rectifierId}on`) {
-      handleCommand(`relay${rectifierId}off`);
-      setActiveButton(`relay${rectifierId}off`);
-      Alert.alert(`Baño ${rectifierId}`, 'El tiempo ha terminado');
-    }
-  }, [timer, activeButton, rectifierId]);
-
-  const handleCommand = (command) => {
-    fetch(`http://10.10.0.68/${command}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.text();
-      })
-      .then(data => console.log(data))
-      .catch(error => {
-        console.error('Error en el comando:', error);
-        Alert.alert('Error', 'Asegúrate de estar conectado a la red del dispositivo.');
-      });
-  };
+  const activeButton = activeStates[rectifierId] || null;
 
   const renderButton = (title, command, isControlButton) => (
     <TouchableOpacity
@@ -53,8 +17,7 @@ const RectifierScreen = ({ route, navigation }) => {
       onPress={() => {
         handleCommand(command);
         if (isControlButton) {
-          setActiveButton(command);
-          AsyncStorage.setItem(`rectifier${rectifierId}_button`, command); // Guardar estado en AsyncStorage
+          setActiveButton(rectifierId, command);
           if (command === `relay${rectifierId}on`) {
             startTimer(rectifierId);
           } else {
@@ -94,7 +57,7 @@ const RectifierScreen = ({ route, navigation }) => {
         </View>
         <TouchableOpacity
           style={styles.adjustButton}
-          onPress={() => adjustTimer(5)}
+          onPress={() => adjustTimer(1)}
         >
           <Text style={styles.adjustButtonText}>+5 Min</Text>
         </TouchableOpacity>
@@ -116,6 +79,7 @@ const RectifierScreen = ({ route, navigation }) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

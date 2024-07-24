@@ -1,11 +1,20 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import RectifierScreen from '../components/RectifierScreen';
+import { TimerContext } from '../components/TimerContext';  // Ajusta la ruta si es necesario
 
 const Stack = createStackNavigator();
 
 const HomeScreen = ({ navigation }) => {
+  const { timers } = useContext(TimerContext);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   const renderButton = (title, rectifierId) => (
     <TouchableOpacity
       style={styles.button}
@@ -13,6 +22,7 @@ const HomeScreen = ({ navigation }) => {
       key={rectifierId}
     >
       <Text style={styles.buttonText}>{title}</Text>
+      <Text style={styles.timerText}>{formatTime(timers[rectifierId] || 0)}</Text>
     </TouchableOpacity>
   );
 
