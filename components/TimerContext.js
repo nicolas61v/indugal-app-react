@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export const TimerContext = createContext();
 
@@ -51,12 +51,28 @@ export const TimerProvider = ({ children }) => {
       .then(data => console.log(data))
       .catch(error => {
         console.error('Error en el comando:', error);
-        Alert.alert('Error', 'Asegúrate de estar conectado a la red del dispositivo.');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Asegúrate de estar conectado a la red del dispositivo.',
+        });
       });
   };
 
+  const showNotification = (rectifierId) => {
+    Toast.show({
+      type: 'info',
+      text1: `Baño ${rectifierId}`,
+      text2: 'El tiempo ha terminado',
+      visibilityTime: 4000,
+      autoHide: true,
+      topOffset: 30,
+      bottomOffset: 40,
+    });
+  };
+
   const startTimer = (rectifierId) => {
-    stopTimer(rectifierId); // Asegurarse de que no haya múltiples intervalos
+    stopTimer(rectifierId);
 
     const interval = setInterval(() => {
       setTimers((prevTimers) => {
@@ -72,7 +88,7 @@ export const TimerProvider = ({ children }) => {
             saveActiveStates(newStates);
             return newStates;
           });
-          Alert.alert(`Baño ${rectifierId}`, 'El tiempo ha terminado');
+          showNotification(rectifierId);
         }
 
         return updatedTimers;

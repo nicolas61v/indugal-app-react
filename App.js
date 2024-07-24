@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { TimerProvider } from './components/TimerContext';
 import AppNavigator from './navigation/AppNavigator';
+import Toast from 'react-native-toast-message';
 
 const App = () => {
   return (
@@ -9,6 +10,7 @@ const App = () => {
       <NavigationContainer>
         <AppNavigator />
       </NavigationContainer>
+      <Toast />
     </TimerProvider>
   );
 };

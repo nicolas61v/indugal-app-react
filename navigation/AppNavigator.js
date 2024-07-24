@@ -7,7 +7,7 @@ import { TimerContext } from '../components/TimerContext';  // Ajusta la ruta si
 const Stack = createStackNavigator();
 
 const HomeScreen = ({ navigation }) => {
-  const { timers } = useContext(TimerContext);
+  const { timers, activeStates } = useContext(TimerContext);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -17,12 +17,17 @@ const HomeScreen = ({ navigation }) => {
 
   const renderButton = (title, rectifierId) => (
     <TouchableOpacity
-      style={styles.button}
+      style={[
+        styles.button,
+        activeStates[rectifierId] === `relay${rectifierId}on` ? styles.activeButton : null
+      ]}
       onPress={() => navigation.navigate('Rectifier', { rectifierId })}
       key={rectifierId}
     >
       <Text style={styles.buttonText}>{title}</Text>
-      <Text style={styles.timerText}>{formatTime(timers[rectifierId] || 0)}</Text>
+      <View style={styles.timerContainer}>
+        <Text style={styles.timerText}>{formatTime(timers[rectifierId] || 0)}</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -86,17 +91,33 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#3949ab',
-    paddingVertical: 10,
+    paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 30,
     marginVertical: 20,
     alignItems: 'center',
-    width: 120,
+    width: 150,
+    elevation: 3,
+  },
+  activeButton: {
+    backgroundColor: '#1a237e',
   },
   buttonText: {
     textAlign: 'center',
     color: '#fff',
-    fontSize: 25,
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  timerContainer: {
+    marginTop: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+  },
+  timerText: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });
