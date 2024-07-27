@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { TimerContext } from '../components/TimerContext';  // Ajusta la ruta si es necesario
 
@@ -8,6 +8,7 @@ const RectifierScreen = ({ route, navigation }) => {
 
   const timer = timers[rectifierId] || 0;
   const activeButton = activeStates[rectifierId] || null;
+  const [orderValue, setOrderValue] = useState([0, 0]);
 
   useEffect(() => {
     if (activeButton === `relay${rectifierId}on`) {
@@ -49,27 +50,58 @@ const RectifierScreen = ({ route, navigation }) => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  const adjustOrderValue = (index, adjustment) => {
+    setOrderValue(prev => {
+      const newValue = [...prev];
+      newValue[index] = (newValue[index] + adjustment + 10) % 10;
+      return newValue;
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Image source={require('../assets/indugalLogo.png')} style={styles.logo} />
       <Text style={styles.title}>BAÑO {rectifierId}</Text>
       <View style={styles.contentContainer}>
-        <View style={styles.timerContainer}>
-          <TouchableOpacity
-            style={styles.adjustButton}
-            onPress={() => adjustTimer(-5)}
-          >
-            <Text style={styles.adjustButtonText}>-5 Min</Text>
-          </TouchableOpacity>
-          <View style={styles.timerBox}>
-            <Text style={styles.timerText}>{formatTime(timer)}</Text>
+        <View style={styles.controlsRow}>
+          <View style={styles.timerContainer}>
+            <TouchableOpacity
+              style={styles.adjustButton}
+              onPress={() => adjustTimer(5)}
+            >
+              <Text style={styles.adjustButtonText}>+5 Min</Text>
+            </TouchableOpacity>
+            <View style={styles.timerBox}>
+              <Text style={styles.timerText}>{formatTime(timer)}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.adjustButton}
+              onPress={() => adjustTimer(-5)}
+            >
+              <Text style={styles.adjustButtonText}>-5 Min</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.adjustButton}
-            onPress={() => adjustTimer(5)}
-          >
-            <Text style={styles.adjustButtonText}>+5 Min</Text>
-          </TouchableOpacity>
+          <View style={styles.orderValueContainer}>
+            {orderValue.map((digit, index) => (
+              <View key={index} style={styles.digitContainer}>
+                <TouchableOpacity
+                  style={styles.digitButton}
+                  onPress={() => adjustOrderValue(index, 1)}
+                >
+                  <Text style={styles.digitButtonText}>▲</Text>
+                </TouchableOpacity>
+                <View style={styles.digitBox}>
+                  <Text style={styles.digitText}>{digit}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.digitButton}
+                  onPress={() => adjustOrderValue(index, -1)}
+                >
+                  <Text style={styles.digitButtonText}>▼</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
         </View>
         <View style={styles.buttonRow}>
           {renderButton('SUBIR VOLTAJE', `R${rectifierId}UP`, false)}
@@ -119,22 +151,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
-  timerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#3949ab',
-    borderRadius: 10,
-    padding: 10,
-  },
   adjustButton: {
     backgroundColor: '#3949ab',
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     borderRadius: 10,
-    marginHorizontal: 5,
+    marginVertical: 10,
   },
   adjustButtonText: {
     color: '#fff',
@@ -142,14 +164,76 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   timerBox: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     borderWidth: 2,
     borderColor: '#3949ab',
     borderRadius: 10,
-    marginHorizontal: 10,
+    marginHorizontal: 5,
   },
   timerText: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    color: '#3949ab',
+  },
+  contentContainer: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
+    marginBottom: 20,
+  },
+  timerContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#3949ab',
+    borderRadius: 10,
+    padding: 10,
+    marginRight: 10,
+  },
+  orderValueContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#3949ab',
+    borderRadius: 10,
+    padding: 10,
+    marginLeft: 10,
+  },
+  digitContainer: {
+    alignItems: 'center',
+  },
+  digitButton: {
+    backgroundColor: '#3949ab',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginVertical: 5,
+  },
+  digitButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  digitBox: {
+    paddingVertical: 2,
+    paddingHorizontal: 14,
+    borderWidth: 2,
+    borderColor: '#3949ab',
+    borderRadius: 5,
+    marginVertical: 2,
+  },
+  digitText: {
     fontSize: 30,
     fontWeight: 'bold',
     color: '#3949ab',
