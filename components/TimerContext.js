@@ -1,42 +1,22 @@
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-toast-message';
 
 export const TimerContext = createContext();
 
 export const TimerProvider = ({ children }) => {
   const [timers, setTimers] = useState({});
-  const [intervals, setIntervals] = useState({});
   const [activeStates, setActiveStates] = useState({});
-  const [orderNumbers, setOrderNumbers] = useState({});
-  const notificationQueue = useRef([]);
+  const intervalsRef = useRef({});
+  const saveTimerTimeout = useRef(null);
 
   useEffect(() => {
     loadTimers();
-    loadOrderNumbers();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (notificationQueue.current.length > 0) {
-        const { type, text1, text2 } = notificationQueue.current.shift();
-        Toast.show({
-          type,
-          text1,
-          text2,
-          visibilityTime: 5000,
-          autoHide: true,
-          topOffset: 40,
-          position: 'top',
-        });
+    return () => {
+      if (saveTimerTimeout.current) {
+        clearTimeout(saveTimerTimeout.current);
       }
-    }, 5500); // Slightly longer than visibilityTime to ensure no overlap
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const queueNotification = useCallback((type, text1, text2) => {
-    notificationQueue.current.push({ type, text1, text2 });
+      Object.values(intervalsRef.current).forEach(clearInterval);
+    };
   }, []);
 
   const loadTimers = async () => {
@@ -50,24 +30,29 @@ export const TimerProvider = ({ children }) => {
     }
   };
 
-  const saveTimers = async (newTimers) => {
-    try {
-      await AsyncStorage.setItem('timers', JSON.stringify(newTimers));
-    } catch (error) {
-      console.error('Error saving timers:', error);
+  const saveTimers = useCallback((newTimers) => {
+    if (saveTimerTimeout.current) {
+      clearTimeout(saveTimerTimeout.current);
     }
-  };
+    saveTimerTimeout.current = setTimeout(async () => {
+      try {
+        await AsyncStorage.setItem('timers', JSON.stringify(newTimers));
+      } catch (error) {
+        console.error('Error saving timers:', error);
+      }
+    }, 1000);
+  }, []);
 
-  const saveActiveStates = async (newStates) => {
+  const saveActiveStates = useCallback(async (newStates) => {
     try {
       await AsyncStorage.setItem('activeStates', JSON.stringify(newStates));
     } catch (error) {
       console.error('Error saving active states:', error);
     }
-  };
+  }, []);
 
   const handleCommand = useCallback((command) => {
-    fetch(`http://10.10.0.56/${command}`)
+    fetch(`http://192.168.1.75/${command}`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -77,55 +62,46 @@ export const TimerProvider = ({ children }) => {
       .then(data => console.log(data))
       .catch(error => {
         console.error('Error en el comando:', error);
-        queueNotification('error', 'Error', 'Asegúrate de estar conectado a la red del dispositivo.');
       });
-  }, [queueNotification]);
-
-  const showNotification = useCallback((rectifierId) => {
-    const orderNumber = orderNumbers[rectifierId] || '00';
-    queueNotification('info', `Baño ${rectifierId}`, `El tiempo ha terminado. Orden: ${orderNumber}`);
-  }, [orderNumbers, queueNotification]);
+  }, []);
 
   const startTimer = useCallback((rectifierId) => {
+    if (activeStates[rectifierId] !== `relay${rectifierId}on`) {
+      return;
+    }
+
     stopTimer(rectifierId);
 
-    const interval = setInterval(() => {
+    intervalsRef.current[rectifierId] = setInterval(() => {
       setTimers((prevTimers) => {
         const newTime = Math.max((prevTimers[rectifierId] || 0) - 1, 0);
         const updatedTimers = { ...prevTimers, [rectifierId]: newTime };
-        saveTimers(updatedTimers);
-
+        
         if (newTime === 0) {
           stopTimer(rectifierId);
           handleCommand(`relay${rectifierId}off`);
           setActiveStates((prevStates) => {
-            const newStates = { ...prevStates, [rectifierId]: `relay${rectifierId}off` };
-            saveActiveStates(newStates);
-            return newStates;
+            if (prevStates[rectifierId] !== `relay${rectifierId}off`) {
+              const newStates = { ...prevStates, [rectifierId]: `relay${rectifierId}off` };
+              saveActiveStates(newStates);
+              return newStates;
+            }
+            return prevStates;
           });
-          showNotification(rectifierId);
-          clearOrderNumber(rectifierId);
         }
 
+        saveTimers(updatedTimers);
         return updatedTimers;
       });
     }, 1000);
-
-    setIntervals((prevIntervals) => ({
-      ...prevIntervals,
-      [rectifierId]: interval,
-    }));
-  }, [stopTimer, handleCommand, showNotification, clearOrderNumber]);
+  }, [stopTimer, handleCommand, activeStates, saveTimers, saveActiveStates]);
 
   const stopTimer = useCallback((rectifierId) => {
-    if (intervals[rectifierId]) {
-      clearInterval(intervals[rectifierId]);
-      setIntervals((prevIntervals) => {
-        const { [rectifierId]: _, ...rest } = prevIntervals;
-        return rest;
-      });
+    if (intervalsRef.current[rectifierId]) {
+      clearInterval(intervalsRef.current[rectifierId]);
+      delete intervalsRef.current[rectifierId];
     }
-  }, [intervals]);
+  }, []);
 
   const setTimerDuration = useCallback((rectifierId, duration) => {
     setTimers((prevTimers) => {
@@ -133,7 +109,7 @@ export const TimerProvider = ({ children }) => {
       saveTimers(updatedTimers);
       return updatedTimers;
     });
-  }, []);
+  }, [saveTimers]);
 
   const setActiveButton = useCallback((rectifierId, state) => {
     setActiveStates((prevStates) => {
@@ -141,51 +117,7 @@ export const TimerProvider = ({ children }) => {
       saveActiveStates(newStates);
       return newStates;
     });
-  }, []);
-
-  const loadOrderNumbers = async () => {
-    try {
-      const storedOrderNumbers = await AsyncStorage.getItem('orderNumbers');
-      if (storedOrderNumbers) setOrderNumbers(JSON.parse(storedOrderNumbers));
-    } catch (error) {
-      console.error('Error loading order numbers:', error);
-    }
-  };
-
-  const saveOrderNumbers = async (newOrderNumbers) => {
-    try {
-      await AsyncStorage.setItem('orderNumbers', JSON.stringify(newOrderNumbers));
-    } catch (error) {
-      console.error('Error saving order numbers:', error);
-    }
-  };
-
-  const updateOrderNumber = useCallback((rectifierId, digit, value) => {
-    setOrderNumbers((prevOrderNumbers) => {
-      const currentNumber = prevOrderNumbers[rectifierId] || '00';
-      let newNumber;
-      if (digit === 0) {
-        newNumber = value + currentNumber[1];
-      } else {
-        newNumber = currentNumber[0] + value;
-      }
-      const updatedOrderNumbers = { ...prevOrderNumbers, [rectifierId]: newNumber };
-      saveOrderNumbers(updatedOrderNumbers);
-      return updatedOrderNumbers;
-    });
-  }, []);
-
-  const confirmOrderNumber = useCallback((rectifierId) => {
-    queueNotification('success', `Baño ${rectifierId}`, `Orden ${orderNumbers[rectifierId] || '00'} confirmada`);
-  }, [orderNumbers, queueNotification]);
-
-  const clearOrderNumber = useCallback((rectifierId) => {
-    setOrderNumbers((prevOrderNumbers) => {
-      const updatedOrderNumbers = { ...prevOrderNumbers, [rectifierId]: '00' };
-      saveOrderNumbers(updatedOrderNumbers);
-      return updatedOrderNumbers;
-    });
-  }, []);
+  }, [saveActiveStates]);
 
   const contextValue = {
     timers,
@@ -194,17 +126,12 @@ export const TimerProvider = ({ children }) => {
     setTimerDuration,
     activeStates,
     setActiveButton,
-    handleCommand,
-    orderNumbers,
-    updateOrderNumber,
-    confirmOrderNumber,
-    clearOrderNumber
+    handleCommand
   };
 
   return (
     <TimerContext.Provider value={contextValue}>
       {children}
-      <Toast ref={(ref) => Toast.setRef(ref)} />
     </TimerContext.Provider>
   );
 };
